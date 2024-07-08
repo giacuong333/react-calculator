@@ -1,6 +1,6 @@
 import { Button, Form } from "react-bootstrap";
 import { useReducer } from "react";
-import "bootstrap/dist/css/bootstrap.min.css"; // Import Bootstrap CSS
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 import styles from "./index.module.sass";
 import buttons from "./data.js";
@@ -14,6 +14,7 @@ const ACTIONS = {
   PERCENT: "PERCENT",
   CALCULATE: "CALCULATE",
   CLEAR: "CLEAR",
+  DELETE: "DELETE",
 };
 
 // initial state
@@ -25,20 +26,20 @@ const init = {
 };
 
 // do calculate
-const calculate = (a, b, operator) => {
+function calculate(a, b, operator) {
   const numA = parseFloat(a);
   const numB = parseFloat(b);
-  const operations = {
-    "+": numA + numB,
-    "-": numA - numB,
-    "*": numA * numB,
-    "/": numA / numB,
+  const actions = {
+    "+": (numA + numB).toString(),
+    "-": (numA - numB).toString(),
+    "*": (numA * numB).toString(),
+    "/": (numA / numB).toString(),
   };
-  return operations[operator]?.toString() || "0";
-};
 
-// reducer
-const reducer = (state, action) => {
+  return actions[operator]?.toString() || "0";
+}
+
+function reducer(state, action) {
   // logger
   const { currentInput, previousInput, operator, waitingForNewInput } = state;
   console.log(`Previous state: {${currentInput}, ${previousInput}, ${operator}, ${waitingForNewInput}}`);
@@ -68,13 +69,10 @@ const reducer = (state, action) => {
       }
       return {
         ...state,
-        operator: action.payload,
-        previousInput: state.currentInput,
         currentInput: "0",
+        previousInput: state.currentInput,
+        operator: action.payload,
       };
-
-    case ACTIONS.CLEAR:
-      return init;
 
     case ACTIONS.CALCULATE:
       if (!state.operator) return state;
@@ -87,20 +85,13 @@ const reducer = (state, action) => {
         waitingForNewInput: true,
       };
 
-    case ACTIONS.DECIMAL:
-      if (!state.currentInput.includes(".")) {
-        return {
-          ...state,
-          currentInput: state.currentInput + ".",
-          waitingForNewInput: false,
-        };
-      }
-      return state;
+    case ACTIONS.CLEAR:
+      return init;
 
-    case ACTIONS.INVERT:
+    case ACTIONS.DECIMAL:
       return {
         ...state,
-        currentInput: (parseFloat(state.currentInput) * -1).toString(),
+        currentInput: state.currentInput.includes(".") ? state.currentInput : state.currentInput + ".",
       };
 
     case ACTIONS.PERCENT:
@@ -109,17 +100,30 @@ const reducer = (state, action) => {
         currentInput: (parseFloat(state.currentInput) / 100).toString(),
       };
 
+    case ACTIONS.INVERT:
+      return {
+        ...state,
+        currentInput: (parseFloat(state.currentInput) * -1).toString(),
+      };
+
+    case ACTIONS.DELETE:
+      return {
+        ...state,
+        currentInput:
+          state.currentInput.length - 1 === 0 ? "0" : state.currentInput.slice(0, state.currentInput.length - 1),
+      };
+
     default:
       return state;
   }
-};
+}
 
 const App = () => {
   const [state, dispatch] = useReducer(reducer, init);
 
   // logger
   const { currentInput, previousInput, operator, waitingForNewInput } = state;
-  console.log(`Previous state: {${currentInput}, ${previousInput}, ${operator}, ${waitingForNewInput}}`);
+  console.log(`Current state: {${currentInput}, ${previousInput}, ${operator}, ${waitingForNewInput}}`);
 
   const handleButtonClick = (type, label) => {
     const actions = {
@@ -130,6 +134,7 @@ const App = () => {
       decimal: () => dispatch({ type: ACTIONS.DECIMAL }),
       invert: () => dispatch({ type: ACTIONS.INVERT }),
       percent: () => dispatch({ type: ACTIONS.PERCENT }),
+      delete: () => dispatch({ type: ACTIONS.DELETE }),
     };
     actions[type]?.();
   };

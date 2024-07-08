@@ -17,6 +17,7 @@ const buttons = [
   { label: "+", type: "operator" },
   { label: "0", type: "number" },
   { label: ".", type: "decimal" },
+  { label: "x", type: "delete" },
   { label: "=", type: "equals" },
 ];
 
